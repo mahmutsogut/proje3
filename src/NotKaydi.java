@@ -4,7 +4,6 @@ public abstract class NotKaydi {
     private int finalNotu;
     private double akts;
 
-    // --- CONSTRUCTOR (Alt Sınıf Bağlantısı İçin Kritik) ---
     protected NotKaydi(String dersAdi, int vizeNotu, int finalNotu, double akts) throws GecersizVeriException {
         setDersAdi(dersAdi);
         setVizeNotu(vizeNotu);
@@ -12,38 +11,32 @@ public abstract class NotKaydi {
         setAkts(akts);
     }
 
-    // --- ABSTRACT METOT ---
     public abstract double gpaPuanıHesapla(double yuzlukOrtalama);
 
-    // --- CONCRETE METOTLAR ---
     public double yuzlukOrtalamaHesapla() {
         return this.vizeNotu * 0.4 + this.finalNotu * 0.6;
     }
 
     public String harfNotuGetir() {
-        double gpa = gpaPuanıHesapla(yuzlukOrtalamaHesapla());
+        double ortalama = yuzlukOrtalamaHesapla();
 
-        if (gpa == 4.0) return "AA";
-        if (gpa >= 3.5) return "BA";
-        if (gpa >= 3.0) return "BB";
-        if (gpa >= 2.5) return "CB";
-        if (gpa >= 2.0) return "CC";
+        if (ortalama >= 90) return "AA";
+        if (ortalama >= 80) return "BA";
+        if (ortalama >= 75) return "BB";
+        if (ortalama >= 70) return "CB";
+        if (ortalama >= 60) return "CC";
+        if (ortalama >= 50) return "DC";
+        if (ortalama >= 45) return "DD";
+        if (ortalama >= 35) return "FD";
 
-        if (gpa == 0.0) return "FF";
-        return "DC";
+        return "FF";
     }
 
-    public String durumGetir() {
-        return harfNotuGetir().equals("FF") ? "KALDI" : "GEÇTİ";
-    }
-
-    // --- GETTER METOTLARI ---
     public String getDersAdi() { return dersAdi; }
     public int getVizeNotu() { return vizeNotu; }
     public int getFinalNotu() { return finalNotu; }
     public double getAkts() { return akts; }
 
-    // --- SETTER METOTLARI (Kontrollü) ---
     public void setDersAdi(String dersAdi) {
         this.dersAdi = dersAdi;
     }

@@ -4,16 +4,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;   // <-- Bu satır hatayı çözdü
+import java.util.Map;
 import java.util.Scanner;
+
 
 public class Dosyaİslemleri {
 
-    // Okuma (I/O Read) metodu
-    public static List<String> notDosyasiniOku(String dosyaYolu) throws FileNotFoundException {
+    public static List<String> notDosyasiniOku(String dosya) throws FileNotFoundException {
         List<String> satirlar = new ArrayList<>();
 
-        try (Scanner scanner = new Scanner(new File(dosyaYolu))) {
+        /* Try-with-resources yapısı: Scanner işi bitince otomatik kapanır */
+        try (Scanner scanner = new Scanner(new File(dosya))) {
             while (scanner.hasNextLine()) {
                 satirlar.add(scanner.nextLine());
             }
@@ -21,32 +22,28 @@ public class Dosyaİslemleri {
         return satirlar;
     }
 
-    // Yazma (I/O Write) metodu. Map kullandığı için import edilmeliydi.
-    public static void ogrenciListesiniYaz(String dosyaYolu, Map<String, Ogrenci> ogrenciKayitlari) throws FileNotFoundException {
-        try (PrintWriter writer = new PrintWriter(dosyaYolu)) {
-            writer.println("OGR_NO,AD,SOYAD,GIRIS_YILI,GANO");
+    public static void ogrenciListesiniYaz(String dosya, Map<String, Ogrenci> ogrenciKayitlari) throws FileNotFoundException {
+        try (PrintWriter writer = new PrintWriter(dosya)) {
+            // Okuma yaparken hata almamak için başlık satırını basit tutalım
+            writer.println("NO,AD,SOYAD,YIL");
             for (Ogrenci ogrenci : ogrenciKayitlari.values()) {
-                writer.printf("%s,%s,%s,%d,%.2f\n",
-                        ogrenci.getOgrenciNo(),
-                        ogrenci.getAd(),
-                        ogrenci.getSoyad(),
-                        ogrenci.getGirisYili(),
-                        ogrenci.getGano()
+                writer.println(
+                        ogrenci.getOgrenciNo() + "," +
+                                ogrenci.getAd() + "," +
+                                ogrenci.getSoyad() + "," +
+                                ogrenci.getGirisYili()
                 );
             }
         }
     }
 
-    // Dosya kontrol ve oluşturma yardımcı metodu
-    public static void dosyaVarliğiniKontrolEtVeOlustur(String dosyaYolu) {
-        File dosya = new File(dosyaYolu);
-        if (!dosya.exists()) {
+    public static void dosyaVarmi(String dosya) {
+        File kontrolDosya = new File(dosya);
+        if (!kontrolDosya.exists()) {
             try {
-                if (dosya.createNewFile()) {
-                    System.out.println("-> Bilgi: Gerekli dosya (" + dosyaYolu + ") otomatik olarak oluşturuldu.");
-                }
+                kontrolDosya.createNewFile();
             } catch (IOException e) {
-                System.err.println("Hata: Dosya oluşturulamadı. Dizin izinlerini kontrol edin.");
+                System.err.println("Dosya oluşturma hatası.");
             }
         }
     }

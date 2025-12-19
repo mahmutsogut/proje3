@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.FileNotFoundException;
 
+
 public class Main {
 
-    // Öğrenci kayıtları: Öğrenci No -> Ogrenci nesnesi (Collections: Map)
     private Map<String, Ogrenci> ogrenciKayitlari = new HashMap<>();
-    // Ders kayıtları: (Collections: List)
+
     private List<Ders> dersListesi = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -19,6 +19,15 @@ public class Main {
     }
 
     public void baslat() {
+
+        System.out.println("-> Generic 'Depo' sınıfı test ediliyor...");
+        Depo<String> mesajDeposu = new Depo<>();
+        mesajDeposu.ekle("Generic yapı başarıyla çalıştı!");
+        System.out.println("-> Sonuç: " + mesajDeposu.getir(0));
+
+        System.out.println("Sistem başlatılıyor, veriler dosyadan yükleniyor...");
+        verileriDosyadanYukle(false); // Açılışta detay gösterme (false)
+
         Scanner sc = new Scanner(System.in);
         int secim;
 
@@ -31,14 +40,31 @@ public class Main {
                 sc.nextLine();
 
                 switch (secim) {
-                    case 1: yeniOgrenciEkle(sc); break;
-                    case 2: notlariDosyadanOkuVeIsle(); break;
-                    case 3: transkriptGoster(sc); break;
-                    case 4: ogrenciBilgileriniGoster(sc); break;
-                    case 5: dersEkle(sc); break;
-                    case 6: enBasariliOgrenciyiBul(); break;
-                    case 7: dersleriListele(); break;
-                    case 8: ogrenciListesiniDosyayaYaz(); break;
+                    case 1:
+                        yeniOgrenciEkle(sc);
+                        break;
+                    case 2:
+                        System.out.println("Dosya tekrar taranıyor...");
+                        verileriDosyadanYukle(true); // Manuel güncellemede detay göster (true)
+                        break;
+                    case 3:
+                        transkriptGoster(sc);
+                        break;
+                    case 4:
+                        ogrenciBilgileriniGoster(sc);
+                        break;
+                    case 5:
+                        dersKaydiYap(sc);
+                        break;
+                    case 6:
+                        enBasariliOgrenciyiBul();
+                        break;
+                    case 7:
+                        dersleriListele();
+                        break;
+                    case 8:
+                        ogrenciListesiniDosyayaYaz();
+                        break;
                     case 0:
                         System.out.println("Sistem Kapatılıyor...");
                         return;
@@ -48,26 +74,34 @@ public class Main {
                 }
             } else {
                 sc.nextLine();
+                System.out.println("Lütfen sayısal bir değer giriniz.");
             }
         }
     }
 
     private void menuGoster() {
-        System.out.println("1. Yeni Öğrenci Ekleme");
-        System.out.println("2. Notları Dosyadan Oku ve İşle ");
-        System.out.println("3. Transkript  Göster");
-        System.out.println("4. Öğrenci Bilgilerini Göster ");
-        System.out.println("5. Ders Ekleme");
-        System.out.println("6. En Başarılı Öğrenciyi Bul ");
-        System.out.println("7. Kayıtlı Dersleri Listele ");
-        System.out.println("8. Kayıtlı Öğrenci Listesini Dosyaya Yaz ");
+        System.out.println("\n --- ÖĞRENCİ BİLGİ SİSTEMİ ---");
+        System.out.println("1. Yeni Öğrenci Ekleme (Elle)");
+        System.out.println("2. Dosyayı Tekrar Oku/Güncelle");
+        System.out.println("3. Transkript Göster");
+        System.out.println("4. Öğrenci Bilgilerini Göster");
+        System.out.println("5. Ders Kaydı Yap");
+        System.out.println("6. En Başarılı Öğrenciyi Bul");
+        System.out.println("7. Kayıtlı Dersleri Listele");
+        System.out.println("8. Kayıtlı Öğrenci Listesini Dosyaya Yaz");
         System.out.println("0. Çıkış");
     }
 
-    // İşlev 1: Yeni Öğrenci Ekleme
+    /* 1. YENİ ÖĞRENCİ EKLEME */
     private void yeniOgrenciEkle(Scanner sc) {
         System.out.print("Öğrenci No: ");
         String no = sc.nextLine();
+
+        if (ogrenciKayitlari.containsKey(no)) {
+            System.out.println("UYARI: Bu numaraya sahip bir öğrenci zaten var.");
+            return;
+        }
+
         System.out.print("Ad: ");
         String ad = sc.nextLine();
         System.out.print("Soyad: ");
@@ -77,192 +111,237 @@ public class Main {
         sc.nextLine();
 
         try {
-            // Öğrenci nesnesi oluşturulur, constructor'da hata kontrolü yapılır.
             Ogrenci yeniOgrenci = new Ogrenci(no, ad, soyad, yil);
             ogrenciKayitlari.put(no, yeniOgrenci);
-            System.out.println(yeniOgrenci.tamAdGetir() + " sisteme eklendi.");
+            System.out.println(yeniOgrenci.tamAdGetir() + " sisteme başarıyla kaydedildi.");
+
+            yeniOgrenci.logKaydiOlustur("Kullanıcı sisteme elle eklendi.");
+
         } catch (GecersizVeriException e) {
             System.err.println("Ekleme başarısız: " + e.getMessage());
         }
     }
 
-    // İşlev 2: Notları Dosyadan Oku ve İşle (I/O Read)
-    private void notlariDosyadanOkuVeIsle() {
+    /* 2. DOSYADAN OKUMA VE GÜNCELLEME (Otomatik Ders Ekleme Özellikli) */
+    public void verileriDosyadanYukle(boolean detayGoster) {
         String dosyaAdi = "not_kayitlari.txt";
-        int basariliSayisi = 0;
+        int basariliNotSayisi = 0;
+        int yeniEklenenOgrenciSayisi = 0;
+
         try {
-            List<String> notSatirlari = Dosyaİslemleri.notDosyasiniOku(dosyaAdi); // Dosyadan okuma
+            List<String> notSatirlari = Dosyaİslemleri.notDosyasiniOku(dosyaAdi);
+
             for (String satir : notSatirlari) {
+                if (satir.startsWith("Öğrenci No")) continue;
 
-                
-                String[] veriler = satir.split(","); // Veri ayrıştırma
-                if (veriler.length != 5) continue;
-                String ogrenciNo = veriler[0].trim();
-                String dersAdi = veriler[1].trim();
-                int vize = Integer.parseInt(veriler[2].trim());
-                int finalNotu = Integer.parseInt(veriler[3].trim());
-                double akts = Double.parseDouble(veriler[4].trim());
+                String[] veriler = satir.split(",");
 
-                Ogrenci ogrenci = ogrenciKayitlari.get(ogrenciNo);
-                if (ogrenci != null) {
-                    // Alt sınıf constructor'ı ile LisansNotu nesnesi oluşturulur
-                    LisansNotu yeniNot = new LisansNotu(dersAdi, vize, finalNotu, akts);
-                    ogrenci.notEkle(yeniNot);
-                    basariliSayisi++;
+                if (veriler.length < 7) continue;
+
+                String ad = veriler[0].trim();
+                String soyad = veriler[1].trim();
+                String ogrenciNo = veriler[2].trim();
+                String dersAdi = veriler[3].trim();
+
+                try {
+                    int vize = Integer.parseInt(veriler[4].trim());
+                    int finalNotu = Integer.parseInt(veriler[5].trim());
+                    double akts = Double.parseDouble(veriler[6].trim());
+
+                    boolean dersVarMi = false;
+                    for (Ders d : dersListesi) {
+                        if (d.getAd().equalsIgnoreCase(dersAdi)) {
+                            dersVarMi = true;
+                            break;
+                        }
+                    }
+                    if (!dersVarMi) {
+                        // Dosyadan gelen dersi sisteme tanımla (Kodu ve Adı aynı yapıldı)
+                        dersListesi.add(new Ders(dersAdi, dersAdi, (int) akts));
+                    }
+
+                    /* Öğrenci İşlemleri */
+                    Ogrenci ogrenci = ogrenciKayitlari.get(ogrenciNo);
+
+                    if (ogrenci == null) {
+                        try {
+                            // Yukarıda tanımladığın 'ad' ve 'soyad' değişkenlerini buraya yerleştiriyoruz.
+                            ogrenci = new Ogrenci(ogrenciNo, ad, soyad, 2024);
+                            ogrenciKayitlari.put(ogrenciNo, ogrenci);
+                            yeniEklenenOgrenciSayisi++;
+                        } catch (GecersizVeriException e) {
+                            continue;
+                        }
+                    }
+
+                    /* Mükerrer Not Önleme (Update Mantığı) */
+                    ogrenci.getNotListesi().removeIf(n -> n.getDersAdi().equalsIgnoreCase(dersAdi));
+
+                    NotKaydi eklenecekNot;
+                    if (dersAdi.toUpperCase().contains("PROJE") || dersAdi.toUpperCase().contains("SERTİFİKA")) {
+                        eklenecekNot = new SertifikaNotu(dersAdi, vize, finalNotu, akts);
+                    } else {
+                        eklenecekNot = new LisansNotu(dersAdi, vize, finalNotu, akts);
+                    }
+
+                    ogrenci.notEkle(eklenecekNot);
+
+                    if (detayGoster) {
+                        ogrenci.logKaydiOlustur(dersAdi + " notu güncellendi/eklendi.");
+                    }
+                    basariliNotSayisi++;
+
+                } catch (NumberFormatException e) {
+                    if (detayGoster) System.out.println("Hatalı sayı formatı: " + satir);
                 }
             }
-            System.out.println("\n✅ Dosyadan not okuma tamamlandı. Toplam " + basariliSayisi + " not başarıyla işlendi.");
+
+            System.out.println("  Yükleme/Güncelleme Tamamlandı.");
+            if (detayGoster) {
+                System.out.println("     " + yeniEklenenOgrenciSayisi + " yeni öğrenci eklendi.");
+                System.out.println("     " + basariliNotSayisi + " not işlendi.");
+            }
+
         } catch (FileNotFoundException e) {
-            System.err.println("Hata: " + dosyaAdi + " dosyası bulunamadı.");
-        } catch (NumberFormatException e) {
-            System.err.println("Hata: Dosya içeriğinde sayısal olmayan bir değer var.");
-        } catch (GecersizVeriException e) { // Özel Exception yakalama
-            System.err.println("Hata: Geçersiz not/AKTS değeri bulundu: " + e.getMessage());
+            System.err.println("Hata: Dosya bulunamadı (" + dosyaAdi + ")");
+        } catch (GecersizVeriException e) {
+            System.err.println("Veri hatası: " + e.getMessage());
         }
     }
 
-    // İşlev 3: Transkript (GANO) Göster
+    /* 3. TRANSKRİPT GÖSTER */
     private void transkriptGoster(Scanner sc) {
         System.out.print("Transkripti görüntülenecek öğrenci no: ");
         String no = sc.nextLine();
         Ogrenci ogrenci = ogrenciKayitlari.get(no);
 
         if (ogrenci != null) {
-            System.out.println(ogrenci.transkriptOlustur()); // Interface metodu çağrılır
+            System.out.println(ogrenci.transkriptOlustur());
         } else {
             System.out.println("Hata! Öğrenci bulunamadı.");
         }
     }
 
-    // İşlev 4: Öğrenci Bilgilerini Göster (Detaylı)
+    /*  4. Öğrenci Bilgileri   */
     private void ogrenciBilgileriniGoster(Scanner sc) {
-        System.out.print("Bilgilerini görüntüleyeceğiniz öğrenci no: ");
-        String no = sc.nextLine();
-        Ogrenci ogrenci = ogrenciKayitlari.get(no);
+        System.out.print("Bilgileri istenen Öğrenci No: ");
+        String no = sc.nextLine().trim();
+        Ogrenci ogr = ogrenciKayitlari.get(no);
 
-        if (ogrenci != null) {
-            System.out.println("Adı Soyadı: " + ogrenci.tamAdGetir());
-            System.out.println("Öğrenci Numarası: " + ogrenci.getOgrenciNo());
-            System.out.println("Giriş Yılı: " + ogrenci.getGirisYili());
-            System.out.println("Kullanıcı Tipi: " + ogrenci.getKullaniciTuru());
+        if (ogr != null) {
+            System.out.println("--->  ÖĞRENCİ KİMLİK BİLGİLERİ         ");
+            System.out.println("Öğrenci No  : " + ogr.getOgrenciNo());
+            System.out.println("Ad Soyad    : " + ogr.getAd() + " " + ogr.getSoyad());
+            System.out.println("Giriş Yılı  : " + ogr.getGirisYili());
+
+            System.out.println("\n--->      KAYITLI DERSLER");
+            List<NotKaydi> dersler = ogr.getNotListesi();
+
+            if (dersler.isEmpty()) {
+                System.out.println("   Bu öğrenciye henüz ders kaydı yapılmamış.");
+            } else {
+                // Sütun başlıkları için formatlı yazı
+                System.out.printf("%-20s | %-5s | %-5s | %-5s\n", "Ders Adı", "Vize", "Final", "AKTS");
+
+                for (NotKaydi not : dersler) {
+                    System.out.printf("%-20s | %-5d | %-5d | %-5.1f\n",
+                            not.getDersAdi(),
+                            not.getVizeNotu(),
+                            not.getFinalNotu(),
+                            not.getAkts());
+                }
+            }
+            System.out.println("==========================================\n");
         } else {
-            System.out.println("Hata! Öğrenci bulunamadı.");
+            System.out.println("  HATA: " + no + " numaralı öğrenci bulunamadı. ");
         }
     }
 
-    // İşlev 5: Ders Ekleme
-    private void dersEkle(Scanner sc) {
-        System.out.print("Ders Kodu: ");
-        String kod = sc.nextLine();
-        System.out.print("Ders Adı: ");
-        String ad = sc.nextLine();
-        System.out.print("Ders Kredisi (1-10): ");
-        int kredi = sc.nextInt();
-        sc.nextLine();
+    /* 5. DERS EKLEME */
+    private void dersKaydiYap(Scanner sc) {
+        System.out.println("\n--- ÖĞRENCİ DERS KAYIT EKRANI ---");
+
+        System.out.print("Dersin tanımlanacağı Öğrenci No: ");
+        String ogrNo = sc.nextLine().trim();
+        Ogrenci ogr = ogrenciKayitlari.get(ogrNo);
+
+        if (ogr == null) {
+            System.out.println("HATA: Öğrenci bulunamadı.");
+            return;
+        }
 
         try {
-            if (kredi < 1 || kredi > 10) {
-                throw new GecersizVeriException("Kredi değeri 1-10 aralığında olmalıdır.");
+            System.out.print("Kaydedilecek Ders Adı: ");
+            String ad = sc.nextLine().trim();
+            System.out.print("Dersin AKTS Değeri: ");
+            double akts = sc.nextDouble();
+            sc.nextLine(); // Buffer temizle
+
+            // 1. Genel ders havuzuna ekle (Daha önce eklenmemişse)
+            boolean varMi = dersListesi.stream().anyMatch(d -> d.getAd().equalsIgnoreCase(ad));
+            if (!varMi) {
+                dersListesi.add(new Ders(ad, ad, (int)akts));
             }
-            Ders yeniDers = new Ders(kod, ad, kredi);
-            dersListesi.add(yeniDers); // Listeye ekleme
-            System.out.println(yeniDers.getAd() + " dersi başarıyla eklendi.");
-        } catch (GecersizVeriException e) {
-            System.err.println("Ders ekleme hatası: " + e.getMessage());
-        } catch (InputMismatchException e) {
-            System.err.println("Hata! Kredi sayısal olmalıdır.");
+
+            // 2. NotKaydi oluştur (Vize ve Finali 0 olarak başlatıyoruz)
+            // Not: NotKaydi abstract olduğu için LisansNotu kullanmaya devam ediyoruz
+            NotKaydi bosNot = new LisansNotu(ad, 0, 0, akts);
+
+            ogr.notEkle(bosNot);
+
+            System.out.println("BAŞARILI: " + ad + " dersi " + ogr.tamAdGetir() + " listesine eklendi.");
+            System.out.println("Notlar henüz girilmedi (Vize: 0, Final: 0).");
+
+        } catch (Exception e) {
+            System.out.println("HATA: Giriş sırasında bir sorun oluştu.");
             sc.nextLine();
         }
     }
 
-    // İşlev 6: En Başarılı Öğrenciyi Bul (Karşılaştırma)
+    /* 6. EN BAŞARILI ÖĞRENCİ */
     private void enBasariliOgrenciyiBul() {
-        System.out.println("\n--- EN BAŞARILI ÖĞRENCİ ---");
-        Ogrenci enIyiOgrenci = null;
-        double enYuksekGano = -1.0;
-
-        for (Ogrenci ogrenci : ogrenciKayitlari.values()) {
-            double gano = ogrenci.getGano(); // Public GANO metodu çağrılır
-
-            if (gano > enYuksekGano) { // Karşılaştırma operatörü
-                enYuksekGano = gano;
-                enIyiOgrenci = ogrenci;
-            }
-        }
-
-        if (enIyiOgrenci != null && enYuksekGano != 0.0) {
-            System.out.println("Öğrenci: " + enIyiOgrenci.tamAdGetir() + " (GANO: " + String.format("%.2f", enYuksekGano) + ")");
-        } else {
-            System.out.println("Not kaydı olan öğrenci bulunmamaktadır.");
-        }
-    }
-
-    // İşlev 7: Kayıtlı Dersleri Listele (Döngü)
-    private void dersleriListele() {
-        System.out.println("\n--- KAYITLI DERSLER ---");
-        if (dersListesi.isEmpty()) {
-            System.out.println("Sistemde kayıtlı ders bulunmamaktadır.");
+        if (ogrenciKayitlari.isEmpty()) {
+            System.out.println("Sistemde kayıtlı öğrenci yok.");
             return;
         }
-        for (Ders ders : dersListesi) { // Döngü
-            System.out.println("-> " + ders.getAd() + " (" + ders.getDersKodu() + ") - AKTS Kredi: " + ders.getKredi());
-        }
-    }
 
-    // İşlev 8: Ders Bazında Başarı Oranı (Filtreleme ve Sayma)
-    private void dersBasindaBasariOrani(Scanner sc) {
-        System.out.print("İstatistik istenecek ders adını girin: ");
-        String dersAdi = sc.nextLine().trim();
-        int toplamOgrenci = 0;
-        int gecenOgrenci = 0;
+        Ogrenci enBasarili = null;
+        double enYuksekGano = -1.0;
 
-        for (Ogrenci ogrenci : ogrenciKayitlari.values()) {
-            List<LisansNotu> notlar = ogrenci.getNotlarByDersAdi(dersAdi); // Öğrenci sınıfındaki filtreleme metodu
-            for (LisansNotu not : notlar) {
-                toplamOgrenci++;
-                if (not.durumGetir().equals("GEÇTİ")) { // Koşullu Sayım
-                    gecenOgrenci++;
-                }
+        for (Ogrenci ogr : ogrenciKayitlari.values()) {
+            if (ogr.getGano() > enYuksekGano) {
+                enYuksekGano = ogr.getGano();
+                enBasarili = ogr;
             }
         }
-        if (toplamOgrenci > 0) {
-            double basariOrani = ((double) gecenOgrenci / toplamOgrenci) * 100;
-            System.out.printf("%s dersinde başarı oranı: %d/%d (%%%s) öğrenci geçti.\n",
-                    dersAdi, gecenOgrenci, toplamOgrenci, String.format("%.2f", basariOrani));
+
+        if (enBasarili != null) {
+            System.out.println("En başarılı öğrenci " + enBasarili.getOgrenciNo() + " nolu öğrenci ve notu=" + String.format("%.2f", enYuksekGano));
         } else {
-            System.out.println("Bu derse ait not kaydı bulunmamaktadır.");
+            System.out.println("Hesaplanabilir notu olan öğrenci bulunamadı.");
         }
     }
 
-    // İşlev 9: En Çok AKTS Toplayan Öğrenciyi Bul (Toplamsal Hesaplama)
-    private void enCokAktsToplayanBul() {
-        System.out.println("\n--- EN ÇOK AKTS TOPLAYAN ÖĞRENCİ ---");
-        Ogrenci enAktsliOgrenci = null;
-        double maxAkts = -1.0;
-
-        for (Ogrenci ogrenci : ogrenciKayitlari.values()) {
-            double toplamAkts = ogrenci.getToplanAkts(); // Öğrenci sınıfındaki toplama metodu
-            if (toplamAkts > maxAkts) {
-                maxAkts = toplamAkts;
-                enAktsliOgrenci = ogrenci;
+    /* 7. DERSLERİ LİSTELE  */
+    private void dersleriListele() {
+        System.out.println("\n--- DERS LİSTESİ ---");
+        if (dersListesi.isEmpty()) {
+            System.out.println("Sistemde kayıtlı ders bulunmamaktadır.");
+        } else {
+            /* Listeyi döngüyle gezip ekrana basıyoruz */
+            for (Ders d : dersListesi) {
+                System.out.println("- " + d.getAd() + " (" + d.getKredi() + " AKTS)");
             }
         }
-        if (enAktsliOgrenci != null && maxAkts > 0) {
-            System.out.println("En çok AKTS toplayan öğrenci: " + enAktsliOgrenci.tamAdGetir() + " (Toplam AKTS: " + String.format("%.1f", maxAkts) + ")");
-        } else {
-            System.out.println("Kayıtlı notu olan öğrenci bulunmamaktadır.");
-        }
     }
 
-    // İşlev 10: Kayıtlı Öğrenci Listesini Dosyaya Yaz (I/O Write)
+    /* 8. DOSYAYA YAZMA */
     private void ogrenciListesiniDosyayaYaz() {
-        String dosyaAdi = "ogrenci_raporu.csv";
         try {
-            // DosyaIslemleri sınıfındaki static metot çağrılır
-            Dosyaİslemleri.ogrenciListesiniYaz(dosyaAdi, ogrenciKayitlari);
-            System.out.println("\n✅ Öğrenci listesi, GANO bilgileriyle birlikte " + dosyaAdi + " dosyasına başarıyla yazıldı.");
+            Dosyaİslemleri.ogrenciListesiniYaz("ogrenci_raporu.csv", ogrenciKayitlari);
+            System.out.println("Öğrenci listesi dosyaya kaydedildi.");
         } catch (FileNotFoundException e) {
-            System.err.println("Hata: Dosyaya yazma işlemi başarısız oldu. Dizini kontrol edin.");
+            System.out.println(" Dosya yazma hatası.");
         }
     }
 }

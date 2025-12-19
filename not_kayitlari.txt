@@ -1,0 +1,24 @@
+Ad,SoyadÖğrenci No,Ders Adı,Vize (40%),Final (60%),AKTS
+Mehmet,Kaya,101,NYP,60,44,6.0
+Mehmet,Kaya,101,Matematik II,40,60,5.0
+Mehmet,Kaya,101,Fizik II,75,23,5.0
+Ahmet,Yılmaz,102,Fizik II,30,45,4.0
+Ahmet,Yılmaz,102,Matematik II,50,70,5.0
+Ahmet,Yılmaz,102,NYP,30,52,6.0
+Ahmet,Yılmaz,102,Diferansiyel,20,35,5.0
+Cem,Yılmaz,103,BMT101,90,90,4.0
+Cem,Yılmaz,103,FİZ202,30,45,4.0
+Cem,Yılmaz,103,Matematik II,50,70,5.0
+Cem,Yılmaz,103,Diferansiyel,50,75,5.0
+Salih,Türk,104,Diferansiyel,75,80,5.0
+Salih,Türk,104,NYP,43,72,6.0
+Salih,Türk,104,Fizik II,60,70,4.0
+Muhammet,Cam,105,BMT101,45,55,4.0
+Muhammet,Cam,105,Matematik II,30,40,5.0
+Muhammet,Cam,105,Fizik II,20,10,4.0
+Mustafa,Kapı,106,NYP,100,95,6.0
+Mustafa,Kapı,106,Diferansiyel,90,85,5.0
+Mustafa,Kapı,106,BMT101,95,100,4.0
+Kaan, Kol,107,Matematik II,65,72,5.0
+Kaan,Kol,107,Fizik II,55,60,4.0
+Kaan,Kol,107,Diferansiyel,40,50,5.0

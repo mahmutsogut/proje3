@@ -6,14 +6,18 @@ public class LisansNotu extends NotKaydi {
 
     @Override
     public double gpaPuanıHesapla(double yuzlukOrtalama) {
-        if (yuzlukOrtalama >= 90) return 4.0;
-        if (yuzlukOrtalama >= 80) return 3.5;
-        if (yuzlukOrtalama >= 70) return 3.0;
-        if (yuzlukOrtalama >= 60) return 2.5;
-        return 0.0;
-    }
 
-    public double gpaPuanıGetir() {
-        return gpaPuanıHesapla(yuzlukOrtalamaHesapla());
+        int basamak = (int) (yuzlukOrtalama / 10);
+        switch (basamak) {
+            case 10:
+            case 9:  return 4.0;
+            case 8:  return 3.5;
+            case 7:  return (yuzlukOrtalama >= 75) ? 3.0 : 2.5;
+            case 6:  return 2.0;
+            case 5:  return 1.5;
+            case 4:  return 1.0;
+            case 3:  return 0.5;
+            default: return 0.0;
+        }
     }
 }
